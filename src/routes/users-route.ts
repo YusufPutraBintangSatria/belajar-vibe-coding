@@ -1,5 +1,5 @@
 import { Elysia, t } from "elysia";
-import { registerUser } from "../services/users-service";
+import { registerUser, loginUser } from "../services/users-service";
 
 export const usersRoute = new Elysia({ prefix: "/api" })
   .post("/users", async ({ body, set }) => {
@@ -20,4 +20,23 @@ export const usersRoute = new Elysia({ prefix: "/api" })
       email: t.String(),
       password: t.String()
     })
+  })
+  .post("/users/login", async ({ body, set }) => {
+    try {
+      const token = await loginUser(body);
+      return { data: token };
+    } catch (error: any) {
+      if (error.message === "Email/password salah") {
+        set.status = 401;
+        return { error: error.message };
+      }
+      set.status = 500;
+      return { error: "Internal Server Error" };
+    }
+  }, {
+    body: t.Object({
+      email: t.String(),
+      password: t.String()
+    })
   });
+
