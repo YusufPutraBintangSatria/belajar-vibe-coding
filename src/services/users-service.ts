@@ -2,6 +2,7 @@ import { db } from "../db";
 import { users, sessions } from "../schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
+import { UnauthorizedError, BadRequestError } from "../errors";
 
 export const registerUser = async (data: any) => {
   const { name, email, password } = data;
@@ -12,7 +13,7 @@ export const registerUser = async (data: any) => {
   });
 
   if (existingUser) {
-    throw new Error("Email sudah terdaftar");
+    throw new BadRequestError("Email sudah terdaftar");
   }
 
   // 2. Hash password
@@ -37,14 +38,14 @@ export const loginUser = async (data: any) => {
   });
 
   if (!user) {
-    throw new Error("Email/password salah");
+    throw new UnauthorizedError("Email/password salah");
   }
 
   // 2. Compare password
   const isPasswordMatch = await bcrypt.compare(password, user.password);
 
   if (!isPasswordMatch) {
-    throw new Error("Email/password salah");
+    throw new UnauthorizedError("Email/password salah");
   }
 
   // 3. Generate token
@@ -68,7 +69,7 @@ export const getCurrentUser = async (token: string) => {
   });
 
   if (!session) {
-    throw new Error("Session tidak valid");
+    throw new UnauthorizedError("Session tidak valid");
   }
 
   const { id, name, email, createdAt } = session.user;
@@ -81,7 +82,7 @@ export const logoutUser = async (token: string) => {
   });
 
   if (!session) {
-    throw new Error("Unauthorized");
+    throw new UnauthorizedError();
   }
 
   await db.delete(sessions).where(eq(sessions.token, token));
