@@ -24,7 +24,11 @@ export const usersRoute = new Elysia({ prefix: "/api" })
       name: t.String({ maxLength: 255 }),
       email: t.String({ maxLength: 255 }),
       password: t.String({ maxLength: 255 })
-    })
+    }),
+    detail: {
+      tags: ['Users'],
+      summary: 'Register User Baru'
+    }
   })
   .post("/users/login", async ({ body }) => {
     const token = await loginUser(body);
@@ -33,7 +37,11 @@ export const usersRoute = new Elysia({ prefix: "/api" })
     body: t.Object({
       email: t.String({ maxLength: 255 }),
       password: t.String({ maxLength: 255 })
-    })
+    }),
+    detail: {
+      tags: ['Users'],
+      summary: 'Login User'
+    }
   })
   .derive(({ headers }) => {
     const authHeader = headers['authorization'];
@@ -47,10 +55,20 @@ export const usersRoute = new Elysia({ prefix: "/api" })
     if (!token) throw new UnauthorizedError();
     const user = await getCurrentUser(token);
     return { data: user };
+  }, {
+    detail: {
+      tags: ['Users'],
+      summary: 'Dapatkan Profil User Saat Ini'
+    }
   })
   .delete("/users/logout", async ({ token }) => {
     if (!token) throw new UnauthorizedError();
     await logoutUser(token);
     return { data: "OK" };
+  }, {
+    detail: {
+      tags: ['Users'],
+      summary: 'Logout User'
+    }
   });
 
