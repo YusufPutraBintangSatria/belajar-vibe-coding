@@ -1,19 +1,20 @@
 import { Elysia, t } from "elysia";
-import { registerUser, loginUser, getCurrentUser } from "../services/users-service";
+import { registerUser, loginUser, getCurrentUser, logoutUser } from "../services/users-service";
+import { AppError, UnauthorizedError } from "../errors";
 
 export const usersRoute = new Elysia({ prefix: "/api" })
-  .post("/users", async ({ body, set }) => {
-    try {
-      await registerUser(body);
-      return { data: "OK" };
-    } catch (error: any) {
-      if (error.message === "Email sudah terdaftar") {
-        set.status = 400;
-        return { error: error.message };
-      }
-      set.status = 500;
-      return { error: "Internal Server Error" };
+  .onError(({ error, set }) => {
+    if (error instanceof AppError) {
+      set.status = error.status;
+      return { error: error.message };
     }
+    console.error(error);
+    set.status = 500;
+    return { error: "Internal Server Error" };
+  })
+  .post("/users", async ({ body }) => {
+    await registerUser(body);
+    return { data: "OK" };
   }, {
     body: t.Object({
       name: t.String(),
@@ -21,42 +22,31 @@ export const usersRoute = new Elysia({ prefix: "/api" })
       password: t.String()
     })
   })
-  .post("/users/login", async ({ body, set }) => {
-    try {
-      const token = await loginUser(body);
-      return { data: token };
-    } catch (error: any) {
-      if (error.message === "Email/password salah") {
-        set.status = 401;
-        return { error: error.message };
-      }
-      set.status = 500;
-      return { error: "Internal Server Error" };
-    }
+  .post("/users/login", async ({ body }) => {
+    const token = await loginUser(body);
+    return { data: token };
   }, {
     body: t.Object({
       email: t.String(),
       password: t.String()
     })
   })
-  .post("/users/current", async ({ headers, set }) => {
-    try {
-      const authHeader = headers['authorization'];
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        set.status = 401;
-        return { error: "Unauthorized" };
-      }
-
-      const token = authHeader.split(' ')[1];
-      const user = await getCurrentUser(token);
-      return { data: user };
-    } catch (error: any) {
-      if (error.message === "Session tidak valid") {
-        set.status = 401;
-        return { error: error.message };
-      }
-      set.status = 500;
-      return { error: "Internal Server Error" };
-    }
+  .derive(({ headers }) => {
+    const authHeader = headers['authorization'];
+    return {
+      token: (authHeader && authHeader.startsWith('Bearer ')) 
+        ? authHeader.split(' ')[1] 
+        : null
+    };
+  })
+  .post("/users/current", async ({ token }) => {
+    if (!token) throw new UnauthorizedError();
+    const user = await getCurrentUser(token);
+    return { data: user };
+  })
+  .delete("/users/logout", async ({ token }) => {
+    if (!token) throw new UnauthorizedError();
+    await logoutUser(token);
+    return { data: "OK" };
   });
 
