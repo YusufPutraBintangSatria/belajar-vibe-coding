@@ -3,7 +3,11 @@ import { registerUser, loginUser, getCurrentUser, logoutUser } from "../services
 import { AppError, UnauthorizedError } from "../errors";
 
 export const usersRoute = new Elysia({ prefix: "/api" })
-  .onError(({ error, set }) => {
+  .onError(({ error, set, code }) => {
+    if (code === 'VALIDATION') {
+      set.status = 400;
+      return { error: error.message };
+    }
     if (error instanceof AppError) {
       set.status = error.status;
       return { error: error.message };
@@ -17,9 +21,9 @@ export const usersRoute = new Elysia({ prefix: "/api" })
     return { data: "OK" };
   }, {
     body: t.Object({
-      name: t.String(),
-      email: t.String(),
-      password: t.String()
+      name: t.String({ maxLength: 255 }),
+      email: t.String({ maxLength: 255 }),
+      password: t.String({ maxLength: 255 })
     })
   })
   .post("/users/login", async ({ body }) => {
@@ -27,8 +31,8 @@ export const usersRoute = new Elysia({ prefix: "/api" })
     return { data: token };
   }, {
     body: t.Object({
-      email: t.String(),
-      password: t.String()
+      email: t.String({ maxLength: 255 }),
+      password: t.String({ maxLength: 255 })
     })
   })
   .derive(({ headers }) => {
