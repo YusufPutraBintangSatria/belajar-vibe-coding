@@ -25,6 +25,9 @@ export const usersRoute = new Elysia({ prefix: "/api" })
       email: t.String({ maxLength: 255 }),
       password: t.String({ maxLength: 255 })
     }),
+    response: t.Object({
+      data: t.String()
+    }),
     detail: {
       tags: ['Users'],
       summary: 'Register User Baru'
@@ -37,6 +40,9 @@ export const usersRoute = new Elysia({ prefix: "/api" })
     body: t.Object({
       email: t.String({ maxLength: 255 }),
       password: t.String({ maxLength: 255 })
+    }),
+    response: t.Object({
+      data: t.String()
     }),
     detail: {
       tags: ['Users'],
@@ -56,6 +62,14 @@ export const usersRoute = new Elysia({ prefix: "/api" })
     const user = await getCurrentUser(token);
     return { data: user };
   }, {
+    response: t.Object({
+      data: t.Object({
+        id: t.Number(),
+        name: t.String(),
+        email: t.String(),
+        created_at: t.Any()
+      })
+    }),
     detail: {
       tags: ['Users'],
       summary: 'Dapatkan Profil User Saat Ini'
@@ -66,6 +80,9 @@ export const usersRoute = new Elysia({ prefix: "/api" })
     await logoutUser(token);
     return { data: "OK" };
   }, {
+    response: t.Object({
+      data: t.String()
+    }),
     detail: {
       tags: ['Users'],
       summary: 'Logout User'
