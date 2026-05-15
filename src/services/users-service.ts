@@ -59,3 +59,19 @@ export const loginUser = async (data: any) => {
   return token;
 };
 
+export const getCurrentUser = async (token: string) => {
+  const session = await db.query.sessions.findFirst({
+    where: eq(sessions.token, token),
+    with: {
+      user: true,
+    },
+  });
+
+  if (!session) {
+    throw new Error("Session tidak valid");
+  }
+
+  const { id, name, email, createdAt } = session.user;
+  return { id, name, email, created_at: createdAt };
+};
+
